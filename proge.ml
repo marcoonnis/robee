@@ -34,18 +34,7 @@ type exp =
 | Raise of ide;;
 
 
-(*type generic = string;;
-type typ = 
-  Tint 
-| Tbool
-| Tchar
-| Tlist of typ
-| Tfun of typ list * typ
-| Tgen of generic;;
 
-let nextsym = ref (-1);;
-let gentide = fun () -> nextsym := !nextsym + 1;
- Tgen (string_of_int (!nextsym));;*)
  
 (************************************************************)
 (*                           ENVIRONMENT                    *)
@@ -178,7 +167,8 @@ let iszero x =
     (match x with
     | Int(a) -> Bool(a=0)
     | _ -> failwith("error"))
-  else failwith ("type error iszero");;
+
+else failwith ("type error iszero");;
 
 (* lesschar *)
 let lesschar (x,y) =
@@ -263,43 +253,40 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Ebool(b) -> (Bool(b))
     | Echar(c) -> (Char(c))
     | Empty -> (VoidList)
-    | Cons(a,b) -> let s = cons(fst(sem_eager a r),fst(sem_eager b r))
-                   and t = type_inf (Cons(a,b),r)
-                   in (s,t)
-    | Den(i) ->(try((applyenv r i),(type_inf(Den(i),r))) with _->failwith"unbound ide")
-    | Prod(a,b) -> (mul(fst(sem_eager a r), fst(sem_eager b r)))
-    | Sum(a,b) -> (add(fst(sem_eager a r), fst(sem_eager b r)))
-    | Diff(a,b)  -> (sub(fst(sem_eager a r), fst(sem_eager b r)))
-    | Mod(a,b) -> (modulo(fst(sem_eager a r), fst(sem_eager b r)))
-    | Div(a,b) -> (divisione(fst(sem_eager a r), fst(sem_eager b r)))
-    | Lessint(a,b) -> (lessint(fst(sem_eager a r), fst(sem_eager b r)))
-    | Eqint(a,b) -> (eqint(fst(sem_eager a r), fst(sem_eager b r)))
-    | Iszero(a) -> (iszero(fst(sem_eager a r)))
-    | Lesschar(a,b) -> (lesschar(fst(sem_eager a r), fst(sem_eager b r)))
-    | Eqchar(a,b) -> (eqchar(fst(sem_eager a r), fst(sem_eager b r) ))
-    | Or(a,b) ->  (or_f(fst(sem_eager a r), fst(sem_eager b r)))
-    | And(a,b) ->  (and_f(fst(sem_eager a r), fst(sem_eager b r)))
-    | Not(a) -> (not_f(fst(sem_eager a r)))
+    | Cons(a,b) -> cons((sem_eager a r),(sem_eager b r))             
+    | Den(i) ->applyenv r i
+    | Prod(a,b) -> (mul((sem_eager a r), (sem_eager b r)))
+    | Sum(a,b) -> (add((sem_eager a r), (sem_eager b r)))
+    | Diff(a,b)  -> (sub((sem_eager a r), (sem_eager b r)))
+    | Mod(a,b) -> (modulo((sem_eager a r), (sem_eager b r)))
+    | Div(a,b) -> (divisione((sem_eager a r), (sem_eager b r)))
+    | Lessint(a,b) -> (lessint((sem_eager a r), (sem_eager b r)))
+    | Eqint(a,b) -> (eqint((sem_eager a r), (sem_eager b r)))
+    | Iszero(a) -> (iszero((sem_eager a r)))
+    | Lesschar(a,b) -> (lesschar((sem_eager a r), (sem_eager b r)))
+    | Eqchar(a,b) -> (eqchar((sem_eager a r), (sem_eager b r) ))
+    | Or(a,b) ->  (or_f((sem_eager a r), (sem_eager b r)))
+    | And(a,b) ->  (and_f((sem_eager a r), (sem_eager b r)))
+    | Not(a) -> (not_f((sem_eager a r)))
     | Ifthenelse(a,b,c) -> 
-            let g = (fst (sem_eager a r)) in
+            let g = ( (sem_eager a r)) in
             if type_check("bool",g) then
                (if g = Bool(true) 
                then ((sem_eager b r))
                else ((sem_eager c r)))
             else failwith ("wrong guard")
     | Let(l,b) -> (sem_eager b (bindList l r))
-    | Fun(i,a) -> (makefun(Fun(i,a)), type_inf(Fun(i,a),r))
-    | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
-        (applyfun((sem_eagerlist b r'), fst(sem_eager a r'), r), type_inf(Apply(a,b),r'))
-| Try (e1,id,e2) ->funtry(e1,id,e2) r
- | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*)
+    | Fun(i,a) -> makefun(Fun(i,a))
+    | Apply (a,b) -> applyfun(sem_eager a r, sem_eagerlist b r)
+(*| Try (e1,id,e2) ->funtry(e1,id,e2) r
+ | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) *)
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
   | _ -> failwith "No"
 
 and bindList l r = match l with
     [] -> r
-  | (x,a)::tl -> bindList tl (bind x (fst(sem_eager a r)) r)
+  | (x,a)::tl -> bindList tl (bind x ((sem_eager a r)) r)
   |_->failwith"error"
 
 and sem_eagerlist el r = match el with
@@ -311,9 +298,9 @@ and makefun (a:exp) =
       |	Fun(ii,aa) -> Funval(a)
       |	_ -> failwith ("Non-functional object"))
 
-and applyfun ((ev2:eval list),(ev1:eval),(r:env)) =
+and applyfun ((ev1:eval),(ev2:eval list)) =
       ( match ev1 with
-      | Funval(Fun(ii,aa)) -> fst(sem_eager aa (bindlist2(r,ii,ev2)))
+      | Funval(Fun(ii,aa),r) -> sem aa (bindlist2(r,ii,ev2))
       | _ -> failwith ("attempt to apply a non-functional object"))
 
 (************************************************************)
