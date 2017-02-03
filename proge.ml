@@ -262,7 +262,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Eint(n) -> (Int(n))
     | Ebool(b) -> (Bool(b))
     | Echar(c) -> (Char(c))
-    | Empty -> (VoidList,(Tlist(gentide())))
+    | Empty -> (VoidList)
     | Cons(a,b) -> let s = cons(fst(sem_eager a r),fst(sem_eager b r))
                    and t = type_inf (Cons(a,b),r)
                    in (s,t)
