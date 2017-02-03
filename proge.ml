@@ -277,7 +277,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
             else failwith ("wrong guard")
     | Let(l,b) -> (sem_eager b (bindList l r))
     | Fun(i,a) -> makefun(Fun(i,a))
-    | Apply (a,b) -> applyfun(sem_eager a r, sem_eagerlist b r)
+    | Apply (a,b) -> applyfun(sem_eager a r, sem_eagerlist b r, r)
 (*| Try (e1,id,e2) ->funtry(e1,id,e2) r
  | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) *)
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
@@ -291,17 +291,17 @@ and bindList l r = match l with
 
 and sem_eagerlist el r = match el with
 	  | [] -> []
-	  | e::el1 -> (fst(sem_eager e r))::(sem_eagerlist el1 r)
+	  | e::el1 -> ((sem_eager e r))::(sem_eagerlist el1 r)
 	  |_-> failwith"error"
 and makefun (a:exp) =
       (match a with
       |	Fun(ii,aa) -> Funval(a)
       |	_ -> failwith ("Non-functional object"))
 
-and applyfun ((ev1:eval),(ev2:eval list)) =
+and applyfun ((ev1:eval),(ev2:eval list),(r:eval env)) =
       ( match ev1 with
-      | Funval(Fun(ii,aa),r) -> sem aa (bindlist2(r,ii,ev2))
-      | _ -> failwith ("attempt to apply a non-functional object"))
+      | Funval(Fun(ii,aa)) -> sem_eager aa (bindList(r,ii,ev2))
+      | _ -> failwith ("attempt to apply a non-functional object"))  
 
 (************************************************************)
 (*                        ECCEZIONI                         *)
