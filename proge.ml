@@ -9,6 +9,8 @@ type exp =
 | Echar of char
 | Empty
 | Cons of exp * exp
+| First of exp
+| Rest of exp
 | Den of ide
 | Prod of exp * exp
 | Sum of exp * exp
@@ -20,6 +22,7 @@ type exp =
 | Iszero of exp
 | Lesschar of exp * exp
 | Eqchar of exp * exp
+| Isempty of exp
 | Or of exp * exp
 | And of exp * exp
 | Not of exp
@@ -31,7 +34,7 @@ type exp =
 | Raise of ide;;
 
 
-type generic = string;;
+(*type generic = string;;
 type typ = 
   Tint 
 | Tbool
@@ -42,7 +45,8 @@ type typ =
 
 let nextsym = ref (-1);;
 let gentide = fun () -> nextsym := !nextsym + 1;
- Tgen (string_of_int (!nextsym));;
+ Tgen (string_of_int (!nextsym));;*)
+ 
 (************************************************************)
 (*                           ENVIRONMENT                    *)
 (************************************************************)
@@ -531,3 +535,6 @@ sem_eager ((Apply(Fun(["Y"],Prod(Den("X"),Den("Y"))),[Eint 2]))) (emptyenv());;
 sem_eager ((Apply(Fun(["Y"],Diff(Eint 3,Den("Y"))),[Eint 2]))) (emptyenv());;
 sem_eager ((Apply(Fun(["Y"],Sum(Den("X"),EInt 3)),[Eint 2]))) (emptyenv());;
 sem_eager ((Apply(Fun(["Y"],Div(("X"),EInt 3)),[Eint 2]))) (emptyenv());;
+
+
+Let([("x",Eint(1));("f",Fun([],Den("x")));("g",Fun(["y"],Let([("x",Eint(2))],Apply(Den("y"),[]))))],Let([("x",Eint(3))],Apply(Den("g"),[Den("f")])))
