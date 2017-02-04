@@ -430,64 +430,65 @@ let rec sem_lazy (e:exp) (r:env) = match e with
   Apply (a,b) ->(match a with
     Fun (e0,e1) ->(match e1 with
       Den (i)->sem_eager e r
-    |Eint n-> Int n,Tint
-    |Ebool b-> Bool b,Tbool
-    |Echar c->Char c,Tchar
+    |Eint n-> Int n
+    |Ebool b-> Bool b
+    |Echar c->Char c
     |Sum(g,h)->(match g,h with
-	Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())
+	Den(i),Den(l)-> sem_eager e r
       | Den (i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
 	  
     |Diff(g,h)->(match g,h with
-	Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())
+	Den(i),Den(l)-> sem_eager e r
       |Den (i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Prod(g,h)->(match g,h with
-	Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())
+	Den(i),Den(l)-> sem_eager e r
       |Den(i),Den(l)->sem_eager e r
       |Den( i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Div(g,h)->(match g,h with
-	Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())
-      |Den (i),Eint n->if n=0 then None,gentide() else sem_eager e r
+	Den(i),Den(l)-> sem_eager e r
+      |Den (i),Eint n->if n=0 then None else sem_eager e r
       |Eint n,Den( i)-> sem_eager e r)
     |Mod(g,h)->(match g,h with
-	Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())	         |Den (i),_->sem_eager e r
+	Den(i),Den(l)-> sem_eager e r 
+ |Den (i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Lessint(g,h)->(match g,h with
-        Den(i),Den(l)-> (try sem_eager e r with Failure "unbound ide"->None,gentide())
+        Den(i),Den(l)->sem_eager e r
       |Den (i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Eqint(g,h)->(match g,h with
-        Den(i),Den(l)->(try sem_eager e r with Failure "unbound ide"->None,gentide())
+        Den(i),Den(l)->sem_eager e r
       |Den(i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Lesschar (g,h)->(match g,h with
-	Den(i),Den(l)->(try sem_eager e r with Failure "unbound ide"->None,gentide())
+	Den(i),Den(l)-> sem_eager e r
       |Den(i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
     |Eqchar (g,h)->(match g,h with
 	
-        Den(i),Den(l)->(try sem_eager e r with Failure "unbound ide"->None,gentide())    
+        Den(i),Den(l)->sem_eager e r  
       |Den (i),_->sem_eager e r
       |_,Den (i)->sem_eager e r)
-    |Iszero a-> match a with Den (i)->(try(sem_eager e r) with Failure"unbound ide"->None,gentide())
-      |Not a-> match a with Den (i)->(try(sem_eager e r)with Failure"unboud ide"->None,gentide())
+    |Iszero a-> match a with Den (i)->(sem_eager e r)
+      |Not a-> match a with Den (i)->sem_eager e r
 	|And (g,h)->(match g,h with
-            Den(i),Den(l)->(try sem_eager e r with Failure "unbound ide"->None,gentide())
+            Den(i),Den(l)->sem_eager e r
           |Den (i),_->sem_eager e r
           |_,Den (i)->sem_eager e r)
 	|Or (g,h)->(match g,h with
-	    Den(i),Den(l)->(try sem_eager e r with Failure "unbound ide"->None,gentide())       
+	    Den(i),Den(l)->sem_eager e r     
 	  |Den (i),_->sem_eager e r
           |_,Den (i)->sem_eager e r)
-	|Ifthenelse(a,b,c)->if type_inf (b,r)=type_inf(Den("x"),r) && type_inf (c,r)=type_inf(Den ("x"),r) then (try(sem_eager e r) with Failure "unbound ide"->None,gentide()) else (try(sem_eager e r) with Failure "unbound ide"->None,gentide())
+	|Ifthenelse(a,b,c)->sem_eager e r
 	|_->let w = sem_eager e1 r in (match w with
-	    (Int(n),Tint) -> (Int(n),Tint)
-	  | (Bool(b),Tbool) -> (Bool(b),Tbool)
-	  | (Char(c),Tchar) -> (Char(c),Tchar)
-          |_->None,gentide())))
-|Raise(i)->sem_eager e r
+	    (Int(n)) -> (Int(n))
+	  | (Bool(b)) -> (Bool(b))
+	  | (Char(c)) -> (Char(c))
+          |_->None )))
+(*|Raise(i)->sem_eager e r*)
 |_->sem_eager e r ;;
 
 
