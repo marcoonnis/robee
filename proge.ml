@@ -188,8 +188,9 @@ let eqchar (x,y) =
     | (Char(a), Char(b)) when Char(a)=Char(b) -> Bool(true)
     | _ -> Bool(false))
   else failwith ("type error eqchar");;
-  
-let Isempty x -> 
+
+(*Isempty*)
+let Isempty x = 
 	(match (sem_exp x r) with
 	Dlist [] -> Bool true
 | Dlist _ -> Bool false
