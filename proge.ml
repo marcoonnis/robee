@@ -193,8 +193,8 @@ let eqchar (x,y) =
  let Isempty x = 
  	(match (sem_exp x r) with
  	Dlist [] -> Bool true
- | Dlist _ -> Bool false)
- | _ -> failwith "Era attesa una lista";;
+ | Dlist _ -> Bool false
+ | _ -> failwith "Era attesa una lista");;
  
 
 (* or*)
