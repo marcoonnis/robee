@@ -189,6 +189,14 @@ let eqchar (x,y) =
     | _ -> Bool(false))
   else failwith ("type error eqchar");;
 
+(*Isempty*)
+ let Isempty x = 
+ 	(match (sem_exp x r) with
+ 	Dlist [] -> Bool true
+ | Dlist _ -> Bool false)
+ | _ -> failwith "Era attesa una lista";;
+ 
+
 (* or*)
 let or_f (x,y) =
   if type_check("bool",x) && type_check("bool",y) 
