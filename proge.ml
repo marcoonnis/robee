@@ -275,14 +275,16 @@ let rec sem_eager (e:exp) (r:env) = match e with
                then ((sem_eager b r))
                else ((sem_eager c r)))
             else failwith ("wrong guard")
-    | Let(i,e1,e2) -> sem_eager e2 (bind i (sem_eager e1 r) r)
+ (*   | Let(i,e1,e2) -> sem_eager e2 (bind i (sem_eager e1 r) r) *)
     | Let(l,b) -> (sem_eager b (bindList l r))
     | Fun(i,a) -> makefun(Fun(i,a))
-    | Apply (a,b) -> applyfun(sem_eager a r, sem_eagerlist b r, r)
+    | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
+        (applyfun((sem_eagerlist b r'), (sem_eager a r'), r))
 (*| Try (e1,id,e2) ->funtry(e1,id,e2) r
  | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) *)
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
+    | Den(i) -> failwith "porcodio."
   | _ -> failwith "No"
 
 and bindList l r = match l with
@@ -299,7 +301,7 @@ and makefun (a:exp) =
       |	Fun(ii,aa) -> Funval(a)
       |	_ -> failwith ("Non-functional object"))
 
-and applyfun ((ev1:eval),(ev2:eval list),(r:env)) =
+and applyfun ((ev2:eval list),(ev1:eval),(r:env)) =
       ( match ev1 with
       | Funval(Fun(ii,aa)) -> sem_eager aa (bindlist2(r,ii,ev2))
       | _ -> failwith ("attempt to apply a non-functional object"))  
@@ -493,36 +495,8 @@ let rec sem_lazy (e:exp) (r:env) = match e with
 (************************************************************)
 (*                        TEST                              *)
 (************************************************************)
-
-(* test eccezioni*)
-sem_eager (Try(Sum(Eint 2,Raise"ecc"),"ecc",Prod(Eint 2,Eint 3))) (emptyenv());
-let ecc1=sem_eager (Try(Ifthenelse(Ebool(true),Raise "pip", Empty),"pip",Apply(Fun(["x"],Den("x")),[Echar('z')]))) (emptyenv());;
-let ecctest=sem_eager(Try(Try(Ifthenelse(Ebool(true), Raise "ecc2", Eint 2),"ecc", Eint 7), "ecc2", Eint 3)) (emptyenv());;
-
-
-
-
- (*test sem_lazy*)
-let lazy_exp2=sem_lazy  (Apply(Fun(["x"], Eint 0),[Div(Eint 3, Den "x")])) (emptyenv());;
-let ex3=sem_lazy (Apply(Fun(["X"],Sum(Den("X"),Eint 2)),[Eint 1])) (emptyenv());;
-sem_lazy (Apply(Fun(["x"],Den("x")),[Eint 1])) (emptyenv());;
-sem_lazy  (Apply(Fun(["Y"],(Div(Den("Y"),Eint 3))),[Eint 1])) (emptyenv());;
-sem_lazy(Let(["Y",Eint 1],Div(Div(Eint 4,Eint 2),Den"Y"))) (emptyenv());;
-let lazy_exp=sem_lazy (Let(["X",Eint 2],Apply(Fun(["Y"],Prod(Den("X"),Den("Y"))),[Eint 1]))) (emptyenv());;
-let ris1=sem_lazy (Let(["X",(Sum(Eint 1,Eint 2))],Den("X"))) (emptyenv());;
-sem_lazy (Let(["X",Eint 2],Apply(Fun(["Y"],Prod(Den("X"),Den("Y"))),[Eint 7]))) (emptyenv());;
-let ris_lazy= (sem_lazy (Let(["X",Eint 2],Apply(Fun(["Y"],Prod(Den("X"),Den("Y"))),[Eint 1]))) (emptyenv()));;
-let lazy4=sem_lazy(Let(["X",Ifthenelse(Ebool true,Eint 1,Eint 0)],Apply(Fun(["x"],Sum(Den("X"),Eint 2)),[Eint 2]))) (emptyenv());;
-let ris_lazy2= (sem_lazy (Let(["Z",Eint 2],Apply(Fun(["Y"],Sum(Den("Z"),Den("Y"))),[Eint 2]))) (emptyenv()));;
-
-
- (*test sem_eager*)
-
-sem_eager (Apply(Fun(["x"],Den("x")),[Eint 1])) (emptyenv());;
-sem_eager ((Apply(Fun(["Y"],Prod(Den("X"),Den("Y"))),[Eint 2]))) (emptyenv());;
-sem_eager ((Apply(Fun(["Y"],Diff(Eint 3,Den("Y"))),[Eint 2]))) (emptyenv());;
-sem_eager ((Apply(Fun(["Y"],Sum(Den("X"),EInt 3)),[Eint 2]))) (emptyenv());;
-sem_eager ((Apply(Fun(["Y"],Div(("X"),EInt 3)),[Eint 2]))) (emptyenv());;
-
-
-Let([("x",Eint(1));("f",Fun([],Den("x")));("g",Fun(["y"],Let([("x",Eint(2))],Apply(Den("y"),[]))))],Let([("x",Eint(3))],Apply(Den("g"),[Den("f")])))
+sem_eager (Let([("x",Eint(1));
+("f",Fun([],Den("x")));
+("g",Fun(["y"],Let([("x",Eint(2))],
+Apply(Den("y"),[]))))],
+Let([("x",Eint(3))],Apply(Den("g"),[Den("f")])))) (emptyenv());;
