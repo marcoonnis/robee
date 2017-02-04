@@ -275,6 +275,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
                then ((sem_eager b r))
                else ((sem_eager c r)))
             else failwith ("wrong guard")
+    | Let(i,e1,e2) -> sem_eager e2 (bind i (sem_eager e1 r) r)
     | Let(l,b) -> (sem_eager b (bindList l r))
     | Fun(i,a) -> makefun(Fun(i,a))
     | Apply (a,b) -> applyfun(sem_eager a r, sem_eagerlist b r, r)
@@ -298,9 +299,9 @@ and makefun (a:exp) =
       |	Fun(ii,aa) -> Funval(a)
       |	_ -> failwith ("Non-functional object"))
 
-and applyfun ((ev1:eval),(ev2:eval list),(r:eval env)) =
+and applyfun ((ev1:eval),(ev2:eval list),(r:env)) =
       ( match ev1 with
-      | Funval(Fun(ii,aa)) -> sem_eager aa (bindList(r,ii,ev2))
+      | Funval(Fun(ii,aa)) -> sem_eager aa (bindlist2(r,ii,ev2))
       | _ -> failwith ("attempt to apply a non-functional object"))  
 
 (************************************************************)
