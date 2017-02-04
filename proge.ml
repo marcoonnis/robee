@@ -191,8 +191,8 @@ let eqchar (x,y) =
 
 (*Isempty*)
  let Isempty x = 
- 	(match x with
- 	Dlist [] -> Bool true
+ 	(match (sem_eager x r) with
+	Dlist [] -> Bool true
  | Dlist _ -> Bool false
  | _ -> failwith "Era attesa una lista");;
  
