@@ -189,13 +189,6 @@ let eqchar (x,y) =
     | _ -> Bool(false))
   else failwith ("type error eqchar");;
 
-(*Isempty*)
-let Isempty x = 
-	(match (sem_exp x r) with
-	Dlist [] -> Bool true
-| Dlist _ -> Bool false
-| _ -> failwith "Era attesa una lista";;
-
 (* or*)
 let or_f (x,y) =
   if type_check("bool",x) && type_check("bool",y) 
@@ -313,6 +306,7 @@ and applyfun ((ev2:eval list),(ev1:eval),(r:env)) =
       | Funval(Fun(ii,aa)) -> sem_eager aa (bindlist2(r,ii,ev2))
       | _ -> failwith ("attempt to apply a non-functional object"))  
 
+(*
 (************************************************************)
 (*                        ECCEZIONI                         *)
 (************************************************************)
@@ -426,7 +420,7 @@ and typ_list l r = match l with
   |_->failwith "error"
 
 ;;
-
+*)
 
 (************************************************************)
 (*                          SEM_LAZY                        *)
