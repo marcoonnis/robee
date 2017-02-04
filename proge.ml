@@ -489,6 +489,7 @@ let rec sem_lazy (e:exp) (r:env) = match e with
             Den(i),Den(l)->sem_eager e r
           |Den (i),_->sem_eager e r
           |_,Den (i)->sem_eager e r)
+	|Isempty a-> match a with Den (i)->(sem_eager e r)
 	|Or (g,h)->(match g,h with
 	    Den(i),Den(l)->sem_eager e r     
 	  |Den (i),_->sem_eager e r
