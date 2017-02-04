@@ -190,10 +190,10 @@ let eqchar (x,y) =
   else failwith ("type error eqchar");;
 
 (*Isempty*)
- let Isempty x = 
- 	(match (sem_eager x r) with
-	Dlist [] -> Bool true
- | Dlist _ -> Bool false
+ let isempty x = 
+ 	(match x with
+ 	VoidList -> Bool true
+ | List _ -> Bool false
  | _ -> failwith "Era attesa una lista");;
  
 
@@ -273,7 +273,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Iszero(a) -> (iszero((sem_eager a r)))
     | Lesschar(a,b) -> (lesschar((sem_eager a r), (sem_eager b r)))
     | Eqchar(a,b) -> (eqchar((sem_eager a r), (sem_eager b r) ))
-    | Isempty(a) -> (Isempty(sem_eager a r))
+    | Isempty(a) -> (isempty(sem_eager a r))
     | Or(a,b) ->  (or_f((sem_eager a r), (sem_eager b r)))
     | And(a,b) ->  (and_f((sem_eager a r), (sem_eager b r)))
     | Not(a) -> (not_f((sem_eager a r)))
@@ -290,7 +290,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
         (applyfun((sem_eagerlist b r'), (sem_eager a r'), r))
 | Try (e1,id,e2) ->funtry(e1,id,e2) r
- | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) 
+ | Raise d -> ((applyenv r d))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) 
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
     | Den(i) -> failwith "porcodio."
@@ -385,7 +385,6 @@ and funtry(e1,id,e2) r=match e1,e2 with
 (************************************************************)
 (*                           TYPE_INF                       *)
 (************************************************************)
-
 and type_inf ((e:exp),(r:env)) = match e with
     Eint(n) -> Tint
   | Ebool(b) -> Tbool
@@ -428,7 +427,6 @@ and typ_list l r = match l with
     [] -> []
   | hd::tl -> type_inf((Den(hd)),r)::(typ_list tl r)
   |_->failwith "error"
-
 ;;
 *)
 
@@ -489,7 +487,6 @@ let rec sem_lazy (e:exp) (r:env) = match e with
             Den(i),Den(l)->sem_eager e r
           |Den (i),_->sem_eager e r
           |_,Den (i)->sem_eager e r)
-	|Isempty a-> match a with Den (i)->(sem_eager e r)
 	|Or (g,h)->(match g,h with
 	    Den(i),Den(l)->sem_eager e r     
 	  |Den (i),_->sem_eager e r
@@ -502,7 +499,6 @@ let rec sem_lazy (e:exp) (r:env) = match e with
           |_->None )))
 (*|Raise(i)->sem_eager e r*)
 |_->sem_eager e r ;;
-
 
 
 (************************************************************)
