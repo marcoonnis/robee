@@ -273,6 +273,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Iszero(a) -> (iszero((sem_eager a r)))
     | Lesschar(a,b) -> (lesschar((sem_eager a r), (sem_eager b r)))
     | Eqchar(a,b) -> (eqchar((sem_eager a r), (sem_eager b r) ))
+    | Isempty(a) -> (isempty(sem_eager a r))
     | Or(a,b) ->  (or_f((sem_eager a r), (sem_eager b r)))
     | And(a,b) ->  (and_f((sem_eager a r), (sem_eager b r)))
     | Not(a) -> (not_f((sem_eager a r)))
