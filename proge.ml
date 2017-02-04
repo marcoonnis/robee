@@ -288,8 +288,8 @@ let rec sem_eager (e:exp) (r:env) = match e with
     | Fun(i,a) -> makefun(Fun(i,a))
     | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
         (applyfun((sem_eagerlist b r'), (sem_eager a r'), r))
-(*| Try (e1,id,e2) ->funtry(e1,id,e2) r
- | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) *)
+| Try (e1,id,e2) ->funtry(e1,id,e2) r
+ | Raise d -> ((applyenv r d),(type_inf(Raise(d),r)))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) 
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
     | Den(i) -> failwith "porcodio."
@@ -314,19 +314,19 @@ and applyfun ((ev2:eval list),(ev1:eval),(r:env)) =
       | Funval(Fun(ii,aa)) -> sem_eager aa (bindlist2(r,ii,ev2))
       | _ -> failwith ("attempt to apply a non-functional object"))  
 
-(*
+
 (************************************************************)
 (*                        ECCEZIONI                         *)
 (************************************************************)
 
 and funtry(e1,id,e2) r=match e1,e2 with
 
-|Eint n,_-> Int n,Tint
-|_,Eint n->Int n,Tint
-|Ebool b,_->Bool b,Tbool
-|_,Ebool b->Bool b,Tbool
-|Echar c,_->Char c,Tchar
-|_,Echar c->Char c,Tchar
+|Eint n,_-> Int n
+|_,Eint n->Int n
+|Ebool b,_->Bool b
+|_,Ebool b->Bool b
+|Echar c,_->Char c
+|_,Echar c->Char c
 |Prod(a,b),_ -> (match a,b with
     Raise(i),_->if id=i then sem_eager (Prod(e2,b)) r else failwith"unbound exception"
   |_,Raise(i)-> if id=i then sem_eager (Prod(a,e2)) r else failwith"unbound exception")
@@ -380,6 +380,7 @@ and funtry(e1,id,e2) r=match e1,e2 with
 
 
 
+(*
 (************************************************************)
 (*                           TYPE_INF                       *)
 (************************************************************)
