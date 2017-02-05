@@ -1,6 +1,6 @@
-(************************************************************)
-(*                          BASE                            *)
-(************************************************************)
+
+(*TESTO PROGETTO*)
+
 type ide = string;;
 
 type exp =
@@ -36,9 +36,9 @@ type exp =
 
 
  
-(************************************************************)
-(*                           ENVIRONMENT                    *)
-(************************************************************)
+
+(*CREAZIONE AMBIENTE (ENV)*)
+
 
 
 type eval = None 
@@ -50,28 +50,26 @@ type eval = None
           | Funval of efun
 and efun = exp;;
 
-(* The function find, given a predicate p: 'a     bool,
-a function f : 'a     eval and a list, finds the first element
-of the list (if any) that satisfies the predicate. *)
+(* trova col predicato p la funzione f *)
 let rec find p f = function
     [] -> None
   | x::l -> if p x then f x else find p f l;;
 
-(* The function bind binds an identifier x to a value v in the given environment. *)
+(* lega identificatori e valori *)
  let rec bind x v = function
     [] -> [(x,v)]
   | (y,v')::l when x=y -> (x,v)::l
   | (y,v')::l -> (y,v')::(bind x v l);;
 
-(* The function applyenv searches the environment for the value bound to the identifier x. *)
+(* cerca l' env giusto e lo applica *)
 let applyenv env x = (find (fun (y,v) -> x=y) (fun (y,v) -> v)) env;;
 let emptyenv () = [];;
 
 type env = (ide*eval) list;;
 
-(************************************************************)
-(*                       FUNCTIONS                          *)
-(************************************************************)
+
+(*FUNZIONI DA RICHIAMARE NEI VARI SEM*)
+
 (* type check principale*)
 let type_check (x,y) =
   match x with
@@ -225,10 +223,14 @@ let not_f x =
   else failwith ("type error not");;
 
 (* first *)
-let first x = match x with List(x,y) -> x |_ -> failwith ("error");;
+let first x = match x with 
+	List(x,y) -> x 
+	|_ -> failwith ("error");;
 
 (* rest *)
-let rest x = match x with List(x,y) -> y |_ -> failwith ("error");;
+let rest x = match x with 
+	List(x,y) -> y 
+	|_ -> failwith ("error");;
 
 (* cons *)
 let cons (x,y) = if type_check("list",y)
@@ -258,9 +260,10 @@ let rec bindlist2 (r,il,el) =
   | _ -> raise WrongBindlist;;
 
 
-(************************************************************)
-(*                          SEM_EAGER                       *)
-(************************************************************)
+
+
+(*SEM_EAGER*)
+
 
 let rec sem_eager (e:exp) (r:env) = match e with
     | Eint(n) -> (Int(n))
@@ -292,13 +295,13 @@ let rec sem_eager (e:exp) (r:env) = match e with
                then ((sem_eager b r))
                else ((sem_eager c r)))
             else failwith ("wrong guard")
- (*   | Let(i,e1,e2) -> sem_eager e2 (bind i (sem_eager e1 r) r) *)
+ 
     | Let(l,b) -> (sem_eager b (bindList l r))
     | Fun(i,a) -> makefun(Fun(i,a))
     | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
         (applyfun((sem_eagerlist b r'), (sem_eager a r'), r))
-| Try (e1,id,e2) ->funtry(e1,id,e2) r
- | Raise d -> ((applyenv r d))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) 
+(*| Try (e1,id,e2) ->funtry(e1,id,e2) r
+ | Raise d -> ((applyenv r d))  *) 
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
   | Den(i) -> (match (applyenv r i) with  Funval(Fun(ii,aa)) -> (bindlist2(r,ii,b)))
@@ -321,12 +324,49 @@ and makefun (a:exp) =
 and applyfun ((ev2:eval list),(ev1:eval),(r:env)) =
       ( match ev1 with
       | Funval(Fun(ii,aa)) -> sem_eager aa (bindlist2(r,ii,ev2))
-      | _ -> failwith ("attempt to apply a non-functional object"))  
+      | _ -> failwith ("attempt to apply a non-functional object"))  ;;
 
+(*SEM_TRY*)
 
-(************************************************************)
-(*                        ECCEZIONI                         *)
-(************************************************************)
+let rec sem_try (e:exp) (r:env) = match e with
+    | Eint(n) -> (Int(n))
+    | Ebool(b) -> (Bool(b))
+    | Echar(c) -> (Char(c))
+    | Empty -> (VoidList)
+    | Cons(a,b) -> cons((sem_try a r),(sem_try b r))  
+    | First(a) -> (first(sem_try a r))
+    | Rest(a) -> (rest(sem_try a r)) 
+    | Den(i) ->applyenv r i
+    | Prod(a,b) -> (mul((sem_try a r), (sem_try b r)))
+    | Sum(a,b) -> (add((sem_try a r), (sem_try b r)))
+    | Diff(a,b)  -> (sub((sem_try a r), (sem_try b r)))
+    | Mod(a,b) -> (modulo((sem_try a r), (sem_try b r)))
+    | Div(a,b) -> (divisione((sem_try a r), (sem_try b r)))
+    | Lessint(a,b) -> (lessint((sem_try a r), (sem_try b r)))
+    | Eqint(a,b) -> (eqint((sem_try a r), (sem_try b r)))
+    | Iszero(a) -> (iszero((sem_try a r)))
+    | Lesschar(a,b) -> (lesschar((sem_try a r), (sem_try b r)))
+    | Eqchar(a,b) -> (eqchar((sem_try a r), (sem_try b r) ))
+    | Isempty(a) -> (isempty(sem_try a r))
+    | Or(a,b) ->  (or_f((sem_try a r), (sem_try b r)))
+    | And(a,b) ->  (and_f((sem_try a r), (sem_try b r)))
+    | Not(a) -> (not_f((sem_try a r)))
+    | Ifthenelse(a,b,c) -> 
+            let g = ( (sem_try a r)) in
+            if type_check("bool",g) then
+               (if g = Bool(true) 
+               then ((sem_eager b r))
+               else ((sem_eager c r)))
+            else failwith ("wrong guard")
+ 
+    | Let(l,b) -> (sem_try b (bindList l r))
+    | Fun(i,a) -> makefun(Fun(i,a))
+    | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
+        (applyfun((sem_eagerlist b r'), (sem_try a r'), r))
+| Try (e1,id,e2) ->funtry(e1,id,e2) r
+ | Raise d -> ((applyenv r d))   
+
+(*ECCEZIONI*)
 
 and funtry(e1,id,e2) r=match e1,e2 with
 
@@ -336,114 +376,64 @@ and funtry(e1,id,e2) r=match e1,e2 with
 |_,Ebool b->Bool b
 |Echar c,_->Char c
 |_,Echar c->Char c
-|First(a),_->(match a with Raise(i)->if id=i then sem_eager (First(e2)) r else failwith"unbound exception")
-|Rest(a),_->(match a with Raise(i)->if id=i then sem_eager (Rest(e2)) r else failwith"unbound exception")
+|First(a),_->(match a with Raise(i)->if id=i then sem_try (First(e2)) r else failwith"unbound exception")
+|Rest(a),_->(match a with Raise(i)->if id=i then sem_try (Rest(e2)) r else failwith"unbound exception")
 |Prod(a,b),_ -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Prod(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Prod(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Prod(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Prod(a,e2)) r else failwith"unbound exception")
 | Sum(a,b),_ -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Sum(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Sum(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Sum(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Sum(a,e2)) r else failwith"unbound exception")
 | Diff(a,b),_  -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Diff(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Diff(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Diff(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Diff(a,e2)) r else failwith"unbound exception")
 | Mod(a,b),_ -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Mod(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Mod(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Mod(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Mod(a,e2)) r else failwith"unbound exception")
 | Div(a,b) ,_-> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Div(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Div(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Div(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Div(a,e2)) r else failwith"unbound exception")
 | Lessint(a,b),_ ->(match a,b with
-    Raise(i),_->if id=i then sem_eager (Lessint(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Lessint(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Lessint(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Lessint(a,e2)) r else failwith"unbound exception")
 | Eqint(a,b),_ -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Eqint(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Eqint(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Eqint(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Eqint(a,e2)) r else failwith"unbound exception")
 | Iszero(a),_->(match a with
-    Raise(i)->if id=i then sem_eager (Iszero(e2)) r else failwith"unbound exception")
+    Raise(i)->if id=i then sem_try (Iszero(e2)) r else failwith"unbound exception")
 |Lesschar(a,b) ,_->(match a,b with
-    Raise(i),_->if id=i then sem_eager (Lesschar(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Lesschar(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Lesschar(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Lesschar(a,e2)) r else failwith"unbound exception")
 | Eqchar(a,b),_ ->(match a,b with
-    Raise(i),_->if id=i then sem_eager (Eqchar(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Eqchar(a,e2)) r else failwith"unbound exception")
-|Isempty(a),_->(match a with Raise(i)->if id=i then sem_eager (Isempty(e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Eqchar(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Eqchar(a,e2)) r else failwith"unbound exception")
+|Isempty(a),_->(match a with Raise(i)->if id=i then sem_try (Isempty(e2)) r else failwith"unbound exception")
 | Or(a,b) ,_-> (match a,b with
-    Raise(i),_->if id=i then sem_eager (Or(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Or(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (Or(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Or(a,e2)) r else failwith"unbound exception")
 | And(a,b),_ -> (match a,b with
-    Raise(i),_->if id=i then sem_eager (And(e2,b)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (And(a,e2)) r else failwith"unbound exception")
+    Raise(i),_->if id=i then sem_try (And(e2,b)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (And(a,e2)) r else failwith"unbound exception")
 | Not(a),_ -> (match a with
-    Raise(i)->if id=i then sem_eager (Not(e2)) r else failwith"unbound exception")
+    Raise(i)->if id=i then sem_try (Not(e2)) r else failwith"unbound exception")
 | Ifthenelse(a,b,c),_ -> (match b,c with
-    Raise(i),_->if id=i then sem_eager (Ifthenelse(a,e2,c)) r else failwith"unbound exception"
-  |_,Raise(i)-> if id=i then sem_eager (Ifthenelse(a,b,e2)) r else failwith"unbpund exception")
+    Raise(i),_->if id=i then sem_try (Ifthenelse(a,e2,c)) r else failwith"unbound exception"
+  |_,Raise(i)-> if id=i then sem_try (Ifthenelse(a,b,e2)) r else failwith"unbpund exception")
       
 |Try(a,b,c),_-> funtry(a,b,c) r
-|Let(l,b),_->(try sem_eager b r with _->funtry(b,id,e2) r 
+|Let(l,b),_->(try sem_try b r with _->funtry(b,id,e2) r 
   |_->failwith"raise not found")
-|Fun(i,e),_->sem_eager e1 r
+|Fun(i,e),_->sem_try e1 r
 |Apply(a,b),_->(match a with
-    Fun(l,e)->sem_eager e1 r      
+    Fun(l,e)->sem_try e1 r      
   |_->failwith"first argument is not a function ")
-|_->sem_eager e1 r;;
+|_->sem_try e1 r;;
       
 
 
 
-(*
-(************************************************************)
-(*                           TYPE_INF                       *)
-(************************************************************)
-and type_inf ((e:exp),(r:env)) = match e with
-    Eint(n) -> Tint
-  | Ebool(b) -> Tbool
-  | Echar(c) -> Tchar
-  | Empty -> Tlist (gentide())
-  | Cons (a,b) -> Tlist (type_inf(a,r))
-  | Den(i) -> let rec typ_den e =
-      (match e with
-           Int(n) -> Tint
-         | Bool(b) -> Tbool
-         | Char(c) -> Tchar
-         | VoidList -> Tlist(gentide())
-         | List(a,b) -> typ_den(a))
-    in typ_den (applyenv r i)
-  | Iszero(a) -> Tbool
-  | Eqint(a,b) -> Tbool
-  | Lesschar(a,b) -> Tbool
-  | Lessint(a,b) -> Tbool
-  | Eqchar(a,b) -> Tbool
-  | Prod(a,b) -> Tint
-  | Sum(a,b) -> Tint
-  | Diff(a,b) -> Tint
-  | Mod(a,b) -> Tint
-  | Div(a,b) -> Tint
-  | And(a,b) -> Tbool
-  | Or(a,b) -> Tbool
-  | Not(a) -> Tbool
-  | Ifthenelse(a,b,c) -> if fst (sem_eager a r) = Bool(true) 
-    then type_inf(b,r)
-    else type_inf(c,r)
-  | Let(l,b) -> type_inf(b,r)
-  | Fun(i,a) -> Tfun(typ_list i r , type_inf(a,r))
-  | Apply(a,b) -> 
-      (match type_inf(a,r) with
-           Tfun(l,e) -> e
-         | _ -> failwith "first argument is not a function")
-| Raise id -> gentide()
- | Try (e0,id,e1) -> type_inf (e0,r)
-and typ_list l r = match l with
-    [] -> []
-  | hd::tl -> type_inf((Den(hd)),r)::(typ_list tl r)
-  |_->failwith "error"
-;;
-*)
+(*SEM_LAZY*)
 
-(************************************************************)
-(*                          SEM_LAZY                        *)
-(************************************************************)
 
 let rec sem_lazy (e:exp) (r:env) = match e with
    
@@ -511,13 +501,55 @@ let rec sem_lazy (e:exp) (r:env) = match e with
 	  | (Bool(b)) -> (Bool(b))
 	  | (Char(c)) -> (Char(c))
           |_->None )))
-(*|Raise(i)->sem_eager e r*)
+|Raise(i)->sem_eager e r
 |_->sem_eager e r ;;
 
 
-(************************************************************)
-(*                        TEST                              *)
-(************************************************************)
+
+
+(*SEM*)
+
+let rec sem (e:exp) (r:env) = match e with
+    | Eint(n) -> (Int(n))
+    | Ebool(b) -> (Bool(b))
+    | Echar(c) -> (Char(c))
+    | Empty -> (VoidList)
+    | Cons(a,b) -> cons((sem a r),(sem b r))  
+    | First(a) -> (first(sem a r))
+    | Rest(a) -> (rest(sem a r)) 
+    | Den(i) ->applyenv r i
+    | Prod(a,b) -> (mul((sem a r), (sem b r)))
+    | Sum(a,b) -> (add((sem a r), (sem b r)))
+    | Diff(a,b)  -> (sub((sem a r), (sem b r)))
+    | Mod(a,b) -> (modulo((sem a r), (sem b r)))
+    | Div(a,b) -> (divisione((sem a r), (sem b r)))
+    | Lessint(a,b) -> (lessint((sem a r), (sem b r)))
+    | Eqint(a,b) -> (eqint((sem a r), (sem b r)))
+    | Iszero(a) -> (iszero((sem a r)))
+    | Lesschar(a,b) -> (lesschar((sem a r), (sem b r)))
+    | Eqchar(a,b) -> (eqchar((sem a r), (sem b r) ))
+    | Isempty(a) -> (isempty(sem a r))
+    | Or(a,b) ->  (or_f((sem a r), (sem b r)))
+    | And(a,b) ->  (and_f((sem a r), (sem b r)))
+    | Not(a) -> (not_f((sem a r)))
+    | Ifthenelse(a,b,c) -> 
+            let g = ( (sem a r)) in
+            if type_check("bool",g) then
+               (if g = Bool(true) 
+               then ((sem b r))
+               else ((sem c r)))
+            else failwith ("wrong guard")
+ 
+    | Let(l,b) -> (sem b (bindList l r))
+    | Fun(i,a) -> makefun(Fun(i,a))
+    | Apply (a,b) -> let r' = applyf(a, (sem_eagerlist b r),r) in
+        (applyfun((sem_eagerlist b r'), (sem_eager a r'), r))
+;;
+
+
+
+(*TEST*)
+
 sem_eager (Let([("x",Eint(1));
 ("f",Fun([],Den("x")));
 ("g",Fun(["y"],Let([("x",Eint(2))],
