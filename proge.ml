@@ -293,7 +293,7 @@ let rec sem_eager (e:exp) (r:env) = match e with
  | Raise d -> ((applyenv r d))  (* considerato Raise come un Den per leggere l'ide  dall'ambiente*) 
 and applyf ((a:exp),(b:eval list),(r:env)) = match a with
     Fun(ii,aa) -> bindlist2(r,ii,b)
-    | Den(i) -> failwith "porcodio."
+  | Den(i) -> (match (applyenv r i) with  Funval(Fun(ii,aa)) -> (bindlist2(r,ii,b)))
   | _ -> failwith "No"
 
 and bindList l r = match l with
